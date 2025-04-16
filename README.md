@@ -48,5 +48,5 @@ before running the application.
 This command runs the application using the previously built JAR file. It requires the build artifact step (Step 3) to
 have been completed successfully.
 
-    docker run -v $(pwd):/mnt -p 9090:9090 -w /mnt mytest ./scripts/run.sh
+    docker run --rm -it -v $(pwd):/mnt -p 9090:9090 -w /mnt mytest ./scripts/run.sh
 

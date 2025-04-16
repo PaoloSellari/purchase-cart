@@ -36,6 +36,8 @@ public class ProductDto implements Serializable {
      * This value is expressed as a percentage and determines the amount of VAT
      * that needs to be applied to the product's price.
      */
+    @Min(0)
+    @Max(100)
     Integer vatRate;
 
     /**

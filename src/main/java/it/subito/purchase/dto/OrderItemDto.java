@@ -21,6 +21,7 @@ public class OrderItemDto implements Serializable {
      * Represents the unique identifier of the associated order.
      * This field serves as a reference to the parent order to which the item belongs.
      */
+    @JsonIgnore
     Long orderId;
 
     /**

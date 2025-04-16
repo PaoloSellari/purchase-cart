@@ -1,5 +1,6 @@
 package it.subito.purchase.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
@@ -14,5 +15,6 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 @Jacksonized
 public class OrderRequestDto {
+    @JsonIgnoreProperties({"orderId"})
     OrderDto order;
 }

@@ -21,89 +21,79 @@ import static org.mockito.Mockito.verify;
 @SpringBootTest
 class OrderServiceTest {
 
+  @MockitoSpyBean private OrderRepository orderRepository;
 
-    @MockitoSpyBean
-    private OrderRepository orderRepository;
+  @MockitoSpyBean private EntityManager entityManager;
 
-    @MockitoSpyBean
-    private EntityManager entityManager;
+  @Autowired private ModelMapper modelMapper;
 
-    @Autowired
-    private ModelMapper modelMapper;
+  @InjectMocks @Autowired private OrderService orderService;
 
+  @Test
+  void createOrder_ShouldCreateAndReturnOrder() {
 
-    @InjectMocks
-    @Autowired
-    private OrderService orderService;
+    var order =
+        Order.builder()
+            .item(OrderItem.builder().productId(1L).quantity(1).build())
+            .item(OrderItem.builder().productId(2L).quantity(2).build())
+            .build();
 
+    var orderDto = modelMapper.toDto(order);
 
-    @Test
-    void createOrder_ShouldCreateAndReturnOrder() {
+    var result = orderService.createOrder(orderDto);
 
-        var order = Order
-                .builder()
-                .item(OrderItem.builder().productId(1L).quantity(1).build())
-                .item(OrderItem.builder().productId(2L).quantity(2).build())
-                .build();
+    verify(orderRepository).updateOrderItemPricingByOrderId(3L);
+    verify(orderRepository).updateOrderPricingByOrderId(3L);
 
-        var orderDto = modelMapper.toDto(order);
+    assertThat(result, is(notNullValue()));
+    assertThat(result.getOrderId(), is(notNullValue()));
+    assertThat(result.getOrderVat(), is(notNullValue()));
+    assertThat(result.getOrderPrice(), is(notNullValue()));
+  }
 
-        var result = orderService.createOrder(orderDto);
+  @Test
+  void updateOrderById_ShouldUpdateAndReturnOrder() {
 
-        verify(orderRepository).updateOrderItemPricingByOrderId(3L);
-        verify(orderRepository).updateOrderPricingByOrderId(3L);
+    var order =
+        Order.builder()
+            .item(OrderItem.builder().productId(5L).quantity(1).build())
+            .item(OrderItem.builder().productId(6L).quantity(2).build())
+            .build();
 
-        assertThat(result, is(notNullValue()));
-        assertThat(result.getOrderId(), is(notNullValue()));
-        assertThat(result.getOrderVat(), is(notNullValue()));
-        assertThat(result.getOrderPrice(), is(notNullValue()));
-    }
+    var orderDto = modelMapper.toDto(order);
+    var result = orderService.updateOrderById(1L, orderDto);
 
-    @Test
-    void updateOrderById_ShouldUpdateAndReturnOrder() {
+    verify(orderRepository).updateOrderItemPricingByOrderId(1L);
+    verify(orderRepository).updateOrderPricingByOrderId(1L);
 
-        var order = Order
-                .builder()
-                .item(OrderItem.builder().productId(5L).quantity(1).build())
-                .item(OrderItem.builder().productId(6L).quantity(2).build())
-                .build();
+    assertThat(result, is(notNullValue()));
+    assertThat(result.getOrderId(), is(notNullValue()));
+    assertThat(result.getOrderVat(), is(notNullValue()));
+    assertThat(result.getOrderPrice(), is(notNullValue()));
 
-        var orderDto = modelMapper.toDto(order);
-        var result = orderService.updateOrderById(1L, orderDto);
+    var products = result.getItems().stream().map(OrderItemDto::getProductId).toList();
+    assertThat(products, containsInAnyOrder(5L, 6L));
+    assertThat(products, not(contains(1L, 2L)));
+  }
 
-        verify(orderRepository).updateOrderItemPricingByOrderId(1L);
-        verify(orderRepository).updateOrderPricingByOrderId(1L);
+  @Test
+  void deleteOrderById_ShouldDeleteOrder() {
+    orderService.deleteOrderById(1L);
+    verify(orderRepository).deleteById(1L);
+    assertThat(orderRepository.findById(1L).isEmpty(), is(true));
+  }
 
-        assertThat(result, is(notNullValue()));
-        assertThat(result.getOrderId(), is(notNullValue()));
-        assertThat(result.getOrderVat(), is(notNullValue()));
-        assertThat(result.getOrderPrice(), is(notNullValue()));
+  @Test
+  void getOrderById_ShouldReturnOrder() {
+    var order = orderService.getOrderById(1L);
+    assertThat(order, is(notNullValue()));
+    assertThat(order.getOrderId(), is(1L));
+    assertThrows(ResourceNotFoundException.class, () -> orderService.getOrderById(3L));
+  }
 
-        var products = result.getItems().stream().map(OrderItemDto::getProductId).toList();
-        assertThat(products, containsInAnyOrder(5L,6L));
-        assertThat(products, not(contains(1L,2L)));
-
-
-    }
-
-    @Test
-    void deleteOrderById_ShouldDeleteOrder() {
-        orderService.deleteOrderById(1L);
-        verify(orderRepository).deleteById(1L);
-        assertThat(orderRepository.findById(1L).isEmpty(),is(true));
-    }
-
-    @Test
-    void getOrderById_ShouldReturnOrder() {
-        var order = orderService.getOrderById(1L);
-        assertThat(order, is(notNullValue()));
-        assertThat(order.getOrderId(), is(1L));
-        assertThrows(ResourceNotFoundException.class, () -> orderService.getOrderById(3L));
-    }
-
-    @Test
-    void getOrders_ShouldReturnOrders() {
-        var orders = orderService.getOrders();
-        assertThat(orders.count(), is(2L));
-    }
+  @Test
+  void getOrders_ShouldReturnOrders() {
+    var orders = orderService.getOrders();
+    assertThat(orders.count(), is(2L));
+  }
 }
